@@ -1,11 +1,4 @@
-/**
- * Reusable horizontal progress bar.
- * `value` is a 0-100 number. Color scales automatically from the value
- * unless a `variant` is explicitly passed.
- */
 const AUTO_COLOR = (value) => {
-  // Keeping fallback colors in case variant expects AUTO_COLOR scale,
-  // but defaulting to the requested premium purple/violet gradient.
   if (value >= 75) return 'bg-emerald-500';
   if (value >= 50) return 'bg-indigo-500';
   if (value >= 25) return 'bg-amber-500';

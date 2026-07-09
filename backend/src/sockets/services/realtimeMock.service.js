@@ -1,10 +1,3 @@
-/**
- * realtimeMock.service.js
- * Orchestrates participant simulation activity while maintaining a live raw telemetry state,
- * triggering the FastAPI AI service re-analysis on every heartbeat, and sending reasoning
- * logs/scores to the frontend via Socket.IO.
- */
-
 const logger = require('../../utils/logger');
 const config = require('../../config');
 const participantService = require('../../services/participant.service');
@@ -19,8 +12,6 @@ const {
 } = require('./generators');
 
 const SCOPE = 'realtime-mock';
-
-// meetingId -> { timers: NodeJS.Timeout[], state: {...} } | { starting: true }
 const sessions = new Map();
 
 function createInitialState(meetingId) {
@@ -30,10 +21,9 @@ function createInitialState(meetingId) {
     speakingId: null,
     confidenceScores: new Map(),
     webcamStatuses: new Map(),
-    // Dynamic meeting telemetry structure matching FastAPI MeetingData schema:
     telemetry: {
       meetingId: meetingId,
-      scheduledStartTime: new Date(Date.now() - 60000).toISOString(),
+      scheduledStartTime: new Date(Date.now() - 600).toISOString(),
       meetingStartTime: new Date().toISOString(),
       meetingDurationSeconds: 0,
       participants: []
@@ -42,17 +32,11 @@ function createInitialState(meetingId) {
   };
 }
 
-/**
- * Runs the AI re-analysis on the current dynamic telemetry state.
- */
 async function runAiAnalysis(io, meetingId, state) {
   try {
     const analysis = await candidateService.getMergedCandidate(state.telemetry);
-
-    // 1. Broadcast the full merged candidate analysis for the Evidence Panel:
     io.to(meetingId).emit(PARTICIPANT_ACTIVITY_EVENTS.ANALYSIS_UPDATED, analysis);
 
-    // 2. Broadcast granular confidence updates for compatibility:
     const candidatesToEmit = [];
     if (analysis.candidate) {
       candidatesToEmit.push({
@@ -90,9 +74,7 @@ async function runAiAnalysis(io, meetingId, state) {
       });
     });
 
-    // 3. Compare with last analysis to emit real reasoning timeline logs:
     generateReasoningTimelineEvents(io, meetingId, state, analysis);
-
     state.lastAnalysis = analysis;
   } catch (err) {
     logger.error(SCOPE, 'AI service analysis failed', {
@@ -102,9 +84,6 @@ async function runAiAnalysis(io, meetingId, state) {
   }
 }
 
-/**
- * Generates plain-language reasoning events on the timeline based on what changed.
- */
 function generateReasoningTimelineEvents(io, meetingId, state, analysis) {
   const prev = state.lastAnalysis;
   const current = analysis;
@@ -120,7 +99,6 @@ function generateReasoningTimelineEvents(io, meetingId, state, analysis) {
     return;
   }
 
-  // 1. Check if chosen candidate changed:
   if (prev.candidate?.participantId !== current.candidate?.participantId) {
     emitTimelineEvent(io, meetingId, {
       type: 'candidate_selected',
@@ -128,7 +106,6 @@ function generateReasoningTimelineEvents(io, meetingId, state, analysis) {
       detail: `AI shifted candidate selection from ${prev.candidate?.displayName || 'None'} to ${current.candidate?.displayName} (Uncertainty: ${Math.round(current.uncertainty * 100)}%)`
     });
   } else if (prev.confidence !== current.confidence) {
-    // 2. Check if confidence changed:
     const diff = Math.round((current.confidence - prev.confidence) * 100);
     if (Math.abs(diff) >= 2) {
       const direction = diff > 0 ? 'increased' : 'decreased';
@@ -140,7 +117,6 @@ function generateReasoningTimelineEvents(io, meetingId, state, analysis) {
     }
   }
 
-  // 3. Compare evidence score increments:
   current.evidence.forEach((item) => {
     const prevItem = prev.evidence.find((e) => e.feature === item.feature);
     if (!prevItem) return;
@@ -191,9 +167,6 @@ function emitTimelineEvent(io, meetingId, { type, title, detail }) {
   io.to(meetingId).emit(TIMELINE_EVENTS.EVENT, timelineEntry);
 }
 
-/**
- * Exposes the currently active session's telemetry state to REST hydration calls.
- */
 function getActiveTelemetry() {
   for (const session of sessions.values()) {
     if (session && session.state && session.state.telemetry) {
@@ -203,7 +176,7 @@ function getActiveTelemetry() {
   return null;
 }
 
-function runTick({ io, meetingId, participants, state, generatorFn, eventName, eventKey, timerRef }) {
+async function runTick({ io, meetingId, participants, state, generatorFn, eventName, eventKey, timerRef }) {
   const payload = generatorFn({ meetingId, participants, state });
 
   if (!payload) {
@@ -215,12 +188,12 @@ function runTick({ io, meetingId, participants, state, generatorFn, eventName, e
   }
 
   io.to(meetingId).emit(eventName, payload);
-  logger.info(SCOPE, `Emitted ${eventName}`, { meetingId, ...payload });
-
   const timelineEntry = mapToTimelineEntry(eventKey, payload);
   if (timelineEntry) {
     io.to(meetingId).emit(TIMELINE_EVENTS.EVENT, timelineEntry);
   }
+
+  await runAiAnalysis(io, meetingId, state);
 }
 
 function toGeneratorParticipant(participant) {
@@ -259,7 +232,22 @@ async function startMockActivity(io, meetingId) {
   const timers = [];
   const joinTimerRef = { current: null };
 
-  // 1. Join Timer:
+  const DEMO_JOIN_INTERVAL_MS = 15000;
+  const DEMO_SPEAKING_INTERVAL_MS = 20000;
+  const DEMO_CAMERA_INTERVAL_MS = 25000;
+  const DEMO_LEAVE_INTERVAL_MS = 60000;
+
+  runTick({
+    io,
+    meetingId,
+    participants,
+    state,
+    generatorFn: generateJoinEvent,
+    eventName: PARTICIPANT_ACTIVITY_EVENTS.JOINED,
+    eventKey: 'join',
+    timerRef: joinTimerRef,
+  });
+
   joinTimerRef.current = setInterval(() => {
     runTick({
       io,
@@ -271,10 +259,9 @@ async function startMockActivity(io, meetingId) {
       eventKey: 'join',
       timerRef: joinTimerRef,
     });
-  }, config.mockRealtime.joinIntervalMs);
+  }, DEMO_JOIN_INTERVAL_MS);
   timers.push(joinTimerRef);
 
-  // 2. Leave Timer:
   const leaveTimer = setInterval(() => {
     runTick({
       io,
@@ -285,10 +272,9 @@ async function startMockActivity(io, meetingId) {
       eventName: PARTICIPANT_ACTIVITY_EVENTS.LEFT,
       eventKey: 'leave',
     });
-  }, config.mockRealtime.leaveIntervalMs);
+  }, DEMO_LEAVE_INTERVAL_MS);
   timers.push({ current: leaveTimer });
 
-  // 3. Speaking Switch Timer:
   const speakingTimer = setInterval(() => {
     runTick({
       io,
@@ -299,10 +285,9 @@ async function startMockActivity(io, meetingId) {
       eventName: PARTICIPANT_ACTIVITY_EVENTS.SPEAKING_CHANGED,
       eventKey: 'speaking',
     });
-  }, config.mockRealtime.speakingIntervalMs);
+  }, DEMO_SPEAKING_INTERVAL_MS);
   timers.push({ current: speakingTimer });
 
-  // 4. Camera Switch Timer:
   const cameraTimer = setInterval(() => {
     runTick({
       io,
@@ -313,12 +298,13 @@ async function startMockActivity(io, meetingId) {
       eventName: PARTICIPANT_ACTIVITY_EVENTS.CAMERA_STATUS_CHANGED,
       eventKey: 'camera',
     });
-  }, config.mockRealtime.cameraIntervalMs);
+  }, DEMO_CAMERA_INTERVAL_MS);
   timers.push({ current: cameraTimer });
 
-  // 5. 1s Heartbeat Telemetry & AI Re-Analysis Heartbeat:
+  let tickCount = 0;
   const heartbeatTimer = setInterval(async () => {
     state.telemetry.meetingDurationSeconds += 1;
+    tickCount += 1;
 
     state.telemetry.participants.forEach((p) => {
       const isCamOn = state.webcamStatuses.get(p.participantId) === 'on';
@@ -348,18 +334,13 @@ async function startMockActivity(io, meetingId) {
       p.speakingDuration = p.speaking.totalSpeakingSeconds;
     });
 
-    if (state.telemetry.participants.length > 0) {
+    if (tickCount % 15 === 0 && state.telemetry.participants.length > 0) {
       await runAiAnalysis(io, meetingId, state);
     }
   }, 1000);
   timers.push({ current: heartbeatTimer });
 
   sessions.set(meetingId, { timers, state });
-
-  logger.info(SCOPE, 'Telemetry-driven real-time AI reasoning pipeline started', {
-    meetingId,
-    participantCount: participants.length,
-  });
 }
 
 function stopMockActivity(meetingId) {
@@ -378,8 +359,6 @@ function stopMockActivity(meetingId) {
   }
 
   sessions.delete(meetingId);
-
-  logger.info(SCOPE, 'Mock realtime activity stopped', { meetingId });
 }
 
 function isRunning(meetingId) {

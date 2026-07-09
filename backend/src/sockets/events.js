@@ -23,6 +23,7 @@ const PARTICIPANT_ACTIVITY_EVENTS = {
   SPEAKING_CHANGED: 'participant:speaking-changed',
   CONFIDENCE_UPDATED: 'participant:confidence-updated',
   CAMERA_STATUS_CHANGED: 'participant:camera-status-changed',
+  ANALYSIS_UPDATED: 'candidate:analysis-updated',
 };
 
 // Normalized timeline feed. Every `PARTICIPANT_ACTIVITY_EVENTS` tick

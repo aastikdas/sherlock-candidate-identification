@@ -112,7 +112,9 @@ function getMeetingMetadata() {
  * inside the AI service integration.
  */
 async function buildConfidenceLookup() {
-  const result = await analysisService.analyzeMeeting();
+  const realtimeMockService = require('../sockets/services/realtimeMock.service');
+  const telemetry = realtimeMockService.getActiveTelemetry();
+  const result = await analysisService.analyzeMeeting(telemetry);
   const lookup = new Map();
 
   (result.participantRanking || []).forEach((entry) => {
@@ -134,9 +136,22 @@ async function buildConfidenceLookup() {
  * `aiConfidence: null` rather than being dropped or throwing, since a
  * missing AI opinion is a valid state, not a fatal error.
  */
-function mergeParticipant(participantInfo, confidenceLookup) {
+function mergeParticipant(participantInfo, confidenceLookup, activeTelemetry) {
+  let webcamStatus = participantInfo.webcamStatus;
+  let speakingDuration = participantInfo.speakingDuration;
+
+  if (activeTelemetry) {
+    const telePart = activeTelemetry.participants.find((p) => p.participantId === participantInfo.participantId);
+    if (telePart) {
+      webcamStatus = telePart.webcamStatus || webcamStatus;
+      speakingDuration = telePart.speakingDuration || speakingDuration;
+    }
+  }
+
   return {
     ...participantInfo,
+    webcamStatus,
+    speakingDuration,
     aiConfidence: confidenceLookup.get(participantInfo.participantId) || null,
   };
 }
@@ -147,13 +162,15 @@ function mergeParticipant(participantInfo, confidenceLookup) {
  * response, no follow-up requests needed.
  */
 async function getParticipants() {
+  const realtimeMockService = require('../sockets/services/realtimeMock.service');
+  const telemetry = realtimeMockService.getActiveTelemetry();
   const [meeting, confidenceLookup] = await Promise.all([
     getMeetingMetadata(),
     buildConfidenceLookup(),
   ]);
 
   const participants = PARTICIPANTS.map((participant) =>
-    mergeParticipant(serializeParticipantInfo(participant), confidenceLookup)
+    mergeParticipant(serializeParticipantInfo(participant), confidenceLookup, telemetry)
   );
 
   return { meeting, participants };
@@ -169,6 +186,8 @@ async function getParticipants() {
  */
 async function getParticipantById(participantId) {
   const participantInfo = findParticipantInfo(participantId);
+  const realtimeMockService = require('../sockets/services/realtimeMock.service');
+  const telemetry = realtimeMockService.getActiveTelemetry();
 
   const [meeting, confidenceLookup] = await Promise.all([
     getMeetingMetadata(),
@@ -176,7 +195,7 @@ async function getParticipantById(participantId) {
   ]);
 
   return {
-    ...mergeParticipant(participantInfo, confidenceLookup),
+    ...mergeParticipant(participantInfo, confidenceLookup, telemetry),
     meeting,
   };
 }

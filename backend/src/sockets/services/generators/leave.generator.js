@@ -22,7 +22,7 @@ function generateLeaveEvent({ meetingId, participants, state }) {
 
   const participant = eligible[0];
   state.leftIds.add(participant.participantId);
-
+  state.webcamStatuses.set(participant.participantId, 'off');
   if (state.speakingId === participant.participantId) {
     state.speakingId = null;
   }

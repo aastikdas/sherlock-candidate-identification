@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { fetchMergedCandidateAnalysis } from '../services/candidateAnalysis.service.js';
+import useSocket from './useSocket.js';
+import { PARTICIPANT_ACTIVITY_EVENTS } from '../constants/socketEvents.js';
 
 /**
  * Mirrors `useParticipants.js`'s error-message extraction so every
@@ -17,14 +19,10 @@ function getErrorMessage(err) {
  * `candidateAnalysis.service.js`) and exposes
  * `{ data, loading, error, refetch }`.
  *
- * REST-only for now -- unlike `useCandidate`/`useParticipants`, this
- * result isn't pushed over the realtime socket channel (the mock
- * activity generators only ever touch the plain confidence score, not
- * the LLM explanation or evidence trail), so there's no live-patch
- * effect here; `refetch` is exposed for callers that want to pull a
- * fresh read on demand.
+ * Listens to `candidate:analysis-updated` socket broadcasts for live updates.
  */
 function useCandidateAnalysis() {
+  const { socket } = useSocket();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -58,6 +56,19 @@ function useCandidateAnalysis() {
       mountedRef.current = false;
     };
   }, [load]);
+
+  useEffect(() => {
+    function handleAnalysisUpdated(payload) {
+      if (!payload) return;
+      setData(payload);
+    }
+
+    socket.on(PARTICIPANT_ACTIVITY_EVENTS.ANALYSIS_UPDATED, handleAnalysisUpdated);
+
+    return () => {
+      socket.off(PARTICIPANT_ACTIVITY_EVENTS.ANALYSIS_UPDATED, handleAnalysisUpdated);
+    };
+  }, [socket]);
 
   return { data, loading, error, refetch: load };
 }

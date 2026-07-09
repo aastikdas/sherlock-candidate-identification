@@ -26,6 +26,13 @@ function generateSpeakingEvent({ meetingId, participants, state }) {
   const previousSpeakerId = state.speakingId;
   state.speakingId = next.participantId;
 
+  if (state.telemetry && state.telemetry.participants) {
+    const telePart = state.telemetry.participants.find((p) => p.participantId === next.participantId);
+    if (telePart) {
+      telePart.speaking.speakingTurns += 1;
+    }
+  }
+
   return {
     meetingId,
     participantId: next.participantId,

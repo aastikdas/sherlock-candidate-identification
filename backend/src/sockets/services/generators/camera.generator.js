@@ -26,6 +26,13 @@ function generateCameraEvent({ meetingId, participants, state }) {
 
   state.webcamStatuses.set(participant.participantId, nextStatus);
 
+  if (state.telemetry && state.telemetry.participants) {
+    const telePart = state.telemetry.participants.find((p) => p.participantId === participant.participantId);
+    if (telePart) {
+      telePart.webcamStatus = nextStatus;
+    }
+  }
+
   return {
     meetingId,
     participantId: participant.participantId,

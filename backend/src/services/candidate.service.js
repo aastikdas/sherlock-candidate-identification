@@ -52,8 +52,10 @@ function isCandidateResult(data) {
  *   connection failure, or an invalid/malformed response.
  */
 async function identifyCandidate(meeting, weights) {
+  const realtimeMockService = require('../sockets/services/realtimeMock.service');
+  const telemetry = meeting || realtimeMockService.getActiveTelemetry();
   const payload = {
-    ...(meeting ? { meeting } : {}),
+    ...(telemetry ? { meeting: telemetry } : {}),
     ...(weights ? { weights } : {}),
   };
   return aiServiceClient.post(IDENTIFY_PATH, payload, { validate: isCandidateResult });
@@ -99,8 +101,10 @@ function isMergedCandidateResult(data) {
  *   connection failure, or an invalid/malformed response.
  */
 async function getMergedCandidate(meeting, weights) {
+  const realtimeMockService = require('../sockets/services/realtimeMock.service');
+  const telemetry = meeting || realtimeMockService.getActiveTelemetry();
   const payload = {
-    ...(meeting ? { meeting } : {}),
+    ...(telemetry ? { meeting: telemetry } : {}),
     ...(weights ? { weights } : {}),
   };
   return aiServiceClient.post(MERGED_PATH, payload, { validate: isMergedCandidateResult });

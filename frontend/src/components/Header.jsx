@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 
 import useSocket from '../hooks/useSocket.js';
-import Container from './Container.jsx';
 
 const STATUS_LABEL = {
   connected: 'Live',
@@ -37,10 +36,10 @@ function ConnectionStatus() {
 
 /**
  * Top application bar.
- * Shows a menu button (mobile sidebar trigger) and a theme toggle.
+ * Shows logo, realtime status, and a theme toggle.
  * Purely presentational shell — no routing or data logic.
  */
-function Header({ onMenuClick }) {
+function Header() {
   const [isDark, setIsDark] = useState(
     () =>
       typeof document !== 'undefined' &&
@@ -53,28 +52,8 @@ function Header({ onMenuClick }) {
 
   return (
     <header className="sticky top-0 z-30 border-b border-gray-200 bg-white/80 backdrop-blur dark:border-gray-800 dark:bg-gray-900/80">
-      <Container className="flex h-16 items-center justify-between">
+      <div className="mx-auto w-full px-4 sm:px-6 lg:px-8 flex h-16 items-center justify-between">
         <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={onMenuClick}
-            aria-label="Toggle sidebar"
-            className="inline-flex h-9 w-9 items-center justify-center rounded-md text-gray-600 hover:bg-gray-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:text-gray-300 dark:hover:bg-gray-800 lg:hidden"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={2}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="h-5 w-5"
-            >
-              <path d="M3 6h18M3 12h18M3 18h18" />
-            </svg>
-          </button>
-
           <span className="text-lg font-semibold text-indigo-600 dark:text-indigo-400">
             Sherlock
           </span>
@@ -119,7 +98,7 @@ function Header({ onMenuClick }) {
             )}
           </button>
         </div>
-      </Container>
+      </div>
     </header>
   );
 }

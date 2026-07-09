@@ -20,7 +20,7 @@ const config = {
   },
 
   aiService: {
-    baseUrl: process.env.AI_SERVICE_URL || 'http://localhost:8000',
+    baseUrl: process.env.AI_SERVICE_URL || 'http://localhost:8001',
     timeoutMs: parseInt(process.env.AI_SERVICE_TIMEOUT_MS, 10) || 5000,
   },
 

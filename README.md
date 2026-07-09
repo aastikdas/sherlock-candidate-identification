@@ -1,5 +1,9 @@
 # Sherlock Internship Challenge
-
+![React](https://img.shields.io/badge/Frontend-React-61DAFB)
+![Express](https://img.shields.io/badge/Backend-Express-000000)
+![FastAPI](https://img.shields.io/badge/AI-FastAPI-009688)
+![Gemini](https://img.shields.io/badge/LLM-Gemini-4285F4)
+![Socket.IO](https://img.shields.io/badge/Realtime-Socket.IO-010101)
 A modular, scalable full-stack scaffold consisting of three independent
 services:
 

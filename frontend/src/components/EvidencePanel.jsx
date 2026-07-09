@@ -54,7 +54,7 @@ function scoreTextColor(score) {
 
 function LoadingEvidencePanel() {
   return (
-    <Card title="Evidence" className="md:col-span-2 xl:col-span-3">
+    <Card title="Evidence">
       <div className="animate-pulse space-y-5">
         <div className="space-y-2">
           <span className="block h-3 w-24 rounded bg-gray-100 dark:bg-gray-800" />
@@ -134,7 +134,7 @@ function EvidencePanel() {
 
   if (error) {
     return (
-      <Card title="Evidence" className="md:col-span-2 xl:col-span-3">
+      <Card title="Evidence">
         <ErrorState resource="evidence" message={error} onRetry={refetch} />
       </Card>
     );
@@ -142,7 +142,7 @@ function EvidencePanel() {
 
   if (!data) {
     return (
-      <Card title="Evidence" className="md:col-span-2 xl:col-span-3">
+      <Card title="Evidence">
         <EmptyState />
       </Card>
     );
@@ -164,7 +164,7 @@ function EvidencePanel() {
   return (
     <Card
       title="Evidence"
-      className="transition-shadow duration-200 hover:shadow-md md:col-span-2 xl:col-span-3"
+      className="transition-shadow duration-200 hover:shadow-md"
     >
       {/* Confidence */}
       <div>

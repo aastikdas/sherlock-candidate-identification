@@ -13,6 +13,12 @@ services:
 | `backend/`   | Node.js, Express, Socket.IO, Multer, CORS, dotenv              | API server & real-time gateway            |
 | `ai-service/`| Python, FastAPI, (optional) Gemini                             | Candidate identification microservice — Feature Extraction Service, Candidate Confidence Engine, Gemini-backed Candidate Identification with deterministic fallback |
 
+Dashboard: <img width="1897" height="862" alt="image" src="https://github.com/user-attachments/assets/403ea393-e3c4-41e4-b545-b5e0bc7f00a9" />
+System Architecture: <img width="1920" height="1080" alt="Untitled design" src="https://github.com/user-attachments/assets/0670375b-9a34-442e-bcb7-cd523087db81" />
+AI Pipeline: <img width="1920" height="1080" alt="Untitled design (1)" src="https://github.com/user-attachments/assets/13f2505d-00d1-47ba-acd0-3a7d8de229d5" />
+
+
+
 See [`ARCHITECTURE.md`](./ARCHITECTURE.md) for a full system diagram and
 request-flow walkthrough, and [`EVALUATION.md`](./EVALUATION.md) for how
 the system was tested, the edge cases it targets, and its known

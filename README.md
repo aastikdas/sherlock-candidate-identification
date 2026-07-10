@@ -205,6 +205,7 @@ mode.
 ## 5. Deployment on Render
 
 This project is prepared for deployment on **Render** as three separate services. Follow these instructions to deploy each one.
+Demo Video Link: https://drive.google.com/file/d/1-VJ_JerhowRMoRsg-nhZbyyeD0xVVCqr/view?usp=sharing
 
 ### 5.1 AI Service (FastAPI)
 Deploy the AI service first so the backend has its URL ready.

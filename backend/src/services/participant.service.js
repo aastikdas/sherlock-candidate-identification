@@ -95,8 +95,8 @@ function findParticipantInfo(participantId) {
  * owns and returns separately -- keeping it here too would just be
  * duplicated, possibly-inconsistent data.
  */
-function getMeetingMetadata() {
-  const { participants, participantsCount, ...meetingMetadata } = meetingService.getMeeting();
+function getMeetingMetadata(meetingId) {
+  const { participants, participantsCount, ...meetingMetadata } = meetingService.getMeeting(meetingId);
   return meetingMetadata;
 }
 
@@ -111,9 +111,9 @@ function getMeetingMetadata() {
  * single, well-understood failure mode regardless of what went wrong
  * inside the AI service integration.
  */
-async function buildConfidenceLookup() {
+async function buildConfidenceLookup(meetingId) {
   const realtimeMockService = require('../sockets/services/realtimeMock.service');
-  const telemetry = realtimeMockService.getActiveTelemetry();
+  const telemetry = realtimeMockService.getActiveTelemetry(meetingId);
   const result = await analysisService.analyzeMeeting(telemetry);
   const lookup = new Map();
 
@@ -161,12 +161,12 @@ function mergeParticipant(participantInfo, confidenceLookup, activeTelemetry) {
  * meeting metadata and their AI-derived confidence -- one call, one
  * response, no follow-up requests needed.
  */
-async function getParticipants() {
+async function getParticipants(meetingId) {
   const realtimeMockService = require('../sockets/services/realtimeMock.service');
-  const telemetry = realtimeMockService.getActiveTelemetry();
+  const telemetry = realtimeMockService.getActiveTelemetry(meetingId);
   const [meeting, confidenceLookup] = await Promise.all([
-    getMeetingMetadata(),
-    buildConfidenceLookup(),
+    getMeetingMetadata(meetingId),
+    buildConfidenceLookup(meetingId),
   ]);
 
   const participants = PARTICIPANTS.map((participant) =>
@@ -184,14 +184,14 @@ async function getParticipants() {
  * AI service, so an unknown `participantId` fails fast with a 404
  * instead of paying for a network round trip first.
  */
-async function getParticipantById(participantId) {
+async function getParticipantById(participantId, meetingId) {
   const participantInfo = findParticipantInfo(participantId);
   const realtimeMockService = require('../sockets/services/realtimeMock.service');
-  const telemetry = realtimeMockService.getActiveTelemetry();
+  const telemetry = realtimeMockService.getActiveTelemetry(meetingId);
 
   const [meeting, confidenceLookup] = await Promise.all([
-    getMeetingMetadata(),
-    buildConfidenceLookup(),
+    getMeetingMetadata(meetingId),
+    buildConfidenceLookup(meetingId),
   ]);
 
   return {

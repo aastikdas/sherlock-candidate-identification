@@ -16,7 +16,9 @@ function generateLeaveEvent({ meetingId, participants, state }) {
     (p) => state.joinedIds.has(p.participantId) && !state.leftIds.has(p.participantId)
   );
 
-  if (eligible.length === 0) {
+  // Keep at least 2 participants (e.g. candidate and one interviewer) in the meeting room
+  // so that speaking activity, camera status, and confidence updates never stop firing.
+  if (eligible.length <= 2) {
     return null;
   }
 

@@ -10,6 +10,7 @@ const {
   generateLeaveEvent,
   generateSpeakingEvent,
   generateCameraEvent,
+  generateConfidenceEvent,
 } = require('./generators');
 
 const SCOPE = 'realtime-mock';
@@ -168,7 +169,13 @@ function emitTimelineEvent(io, meetingId, { type, title, detail }) {
   io.to(meetingId).emit(TIMELINE_EVENTS.EVENT, timelineEntry);
 }
 
-function getActiveTelemetry() {
+function getActiveTelemetry(meetingId) {
+  if (meetingId && sessions.has(meetingId)) {
+    const session = sessions.get(meetingId);
+    if (session && session.state && session.state.telemetry) {
+      return session.state.telemetry;
+    }
+  }
   for (const session of sessions.values()) {
     if (session && session.state && session.state.telemetry) {
       return session.state.telemetry;
@@ -231,8 +238,8 @@ async function startMockActivity(io, meetingId) {
 
   const state = createInitialState(meetingId);
   try {
-    if (meetingService.getMeeting().status === meetingService.STATUS.IN_PROGRESS) {
-      meetingService.endMeeting();
+    if (meetingService.getMeeting(meetingId).status === meetingService.STATUS.IN_PROGRESS) {
+      meetingService.endMeeting(meetingId);
     }
   } catch (e) {
     // ignore
@@ -250,10 +257,11 @@ async function startMockActivity(io, meetingId) {
   const timers = [];
   const joinTimerRef = { current: null };
 
-  const DEMO_JOIN_INTERVAL_MS = 5000;
-  const DEMO_SPEAKING_INTERVAL_MS = 7000;
-  const DEMO_CAMERA_INTERVAL_MS = 10000;
-  const DEMO_LEAVE_INTERVAL_MS = 15000;
+  const DEMO_JOIN_INTERVAL_MS = config.mockRealtime.joinIntervalMs || 3000;
+  const DEMO_SPEAKING_INTERVAL_MS = config.mockRealtime.speakingIntervalMs || 4000;
+  const DEMO_CAMERA_INTERVAL_MS = config.mockRealtime.cameraIntervalMs || 9000;
+  const DEMO_LEAVE_INTERVAL_MS = config.mockRealtime.leaveIntervalMs || 15000;
+  const DEMO_CONFIDENCE_INTERVAL_MS = config.mockRealtime.confidenceIntervalMs || 6000;
 
   runTick({
     io,
@@ -319,6 +327,19 @@ async function startMockActivity(io, meetingId) {
   }, DEMO_CAMERA_INTERVAL_MS);
   timers.push({ current: cameraTimer });
 
+  const confidenceTimer = setInterval(() => {
+    runTick({
+      io,
+      meetingId,
+      participants,
+      state,
+      generatorFn: generateConfidenceEvent,
+      eventName: PARTICIPANT_ACTIVITY_EVENTS.CONFIDENCE_UPDATED,
+      eventKey: 'confidence',
+    });
+  }, DEMO_CONFIDENCE_INTERVAL_MS);
+  timers.push({ current: confidenceTimer });
+
   let tickCount = 0;
   const heartbeatTimer = setInterval(async () => {
     state.telemetry.meetingDurationSeconds += 1;
@@ -377,9 +398,9 @@ function stopMockActivity(meetingId) {
   }
 
   try {
-    const meetingState = meetingService.getMeeting();
+    const meetingState = meetingService.getMeeting(meetingId);
     if (meetingState.status === meetingService.STATUS.IN_PROGRESS && meetingState.meetingId === meetingId) {
-      meetingService.endMeeting();
+      meetingService.endMeeting(meetingId);
     }
   } catch (e) {
     // ignore

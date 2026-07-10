@@ -14,15 +14,23 @@ const STATUS = {
   ENDED: 'ended',
 };
 
-// In-memory mock state. Starts idle — no meeting has happened yet.
-let meeting = {
-  status: STATUS.IDLE,
-  meetingId: null,
-  candidateName: null,
-  participants: [],
-  startedAt: null,
-  endedAt: null,
-};
+// In-memory mock state. Keyed by meetingId to support multiple concurrent sessions.
+const meetings = new Map();
+
+function getOrCreateMeeting(meetingId) {
+  const mId = meetingId || 'meeting-mock-001';
+  if (!meetings.has(mId)) {
+    meetings.set(mId, {
+      status: STATUS.IDLE,
+      meetingId: mId,
+      candidateName: null,
+      participants: [],
+      startedAt: null,
+      endedAt: null,
+    });
+  }
+  return meetings.get(mId);
+}
 
 function formatDuration(startedAt, endedAt) {
   const end = endedAt ? new Date(endedAt) : new Date();
@@ -36,7 +44,8 @@ function formatDuration(startedAt, endedAt) {
   return [hours, minutes, seconds].map((n) => String(n).padStart(2, '0')).join(':');
 }
 
-function serialize() {
+function serialize(meeting) {
+  if (!meeting) return null;
   const isLive = meeting.status === STATUS.IN_PROGRESS;
 
   return {
@@ -53,39 +62,37 @@ function serialize() {
   };
 }
 
-function getMeeting() {
-  return serialize();
+function getMeeting(meetingId) {
+  return serialize(getOrCreateMeeting(meetingId));
 }
 
 function startMeeting({ meetingId, candidateName, participants }) {
+  const mId = meetingId || 'meeting-mock-001';
+  const meeting = getOrCreateMeeting(mId);
   if (meeting.status === STATUS.IN_PROGRESS) {
     throw new ApiError(409, 'A meeting is already in progress.');
   }
 
-  meeting = {
-    status: STATUS.IN_PROGRESS,
-    meetingId,
-    candidateName,
-    participants: participants || [],
-    startedAt: new Date().toISOString(),
-    endedAt: null,
-  };
+  meeting.status = STATUS.IN_PROGRESS;
+  meeting.candidateName = candidateName;
+  meeting.participants = participants || [];
+  meeting.startedAt = new Date().toISOString();
+  meeting.endedAt = null;
 
-  return serialize();
+  return serialize(meeting);
 }
 
-function endMeeting() {
+function endMeeting(meetingId) {
+  const mId = meetingId || 'meeting-mock-001';
+  const meeting = getOrCreateMeeting(mId);
   if (meeting.status !== STATUS.IN_PROGRESS) {
     throw new ApiError(409, 'No meeting is currently in progress.');
   }
 
-  meeting = {
-    ...meeting,
-    status: STATUS.ENDED,
-    endedAt: new Date().toISOString(),
-  };
+  meeting.status = STATUS.ENDED;
+  meeting.endedAt = new Date().toISOString();
 
-  return serialize();
+  return serialize(meeting);
 }
 
 module.exports = {

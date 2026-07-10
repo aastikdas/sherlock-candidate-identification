@@ -51,9 +51,9 @@ function isCandidateResult(data) {
  * @throws {ApiError} propagated from `aiServiceClient` on timeout,
  *   connection failure, or an invalid/malformed response.
  */
-async function identifyCandidate(meeting, weights) {
+async function identifyCandidate(meeting, weights, meetingId) {
   const realtimeMockService = require('../sockets/services/realtimeMock.service');
-  const telemetry = meeting || realtimeMockService.getActiveTelemetry();
+  const telemetry = meeting || realtimeMockService.getActiveTelemetry(meetingId);
   const payload = {
     ...(telemetry ? { meeting: telemetry } : {}),
     ...(weights ? { weights } : {}),
@@ -96,13 +96,14 @@ function isMergedCandidateResult(data) {
  *   service falls back to its own mock meeting data.
  * @param {object|undefined} weights - optional confidence-weight
  *   overrides matching the AI service's `ConfidenceWeights` schema.
+ * @param {string|undefined} meetingId - optional meeting identifier.
  * @returns {Promise<object>} the merged candidate result.
  * @throws {ApiError} propagated from `aiServiceClient` on timeout,
  *   connection failure, or an invalid/malformed response.
  */
-async function getMergedCandidate(meeting, weights) {
+async function getMergedCandidate(meeting, weights, meetingId) {
   const realtimeMockService = require('../sockets/services/realtimeMock.service');
-  const telemetry = meeting || realtimeMockService.getActiveTelemetry();
+  const telemetry = meeting || realtimeMockService.getActiveTelemetry(meetingId);
   const payload = {
     ...(telemetry ? { meeting: telemetry } : {}),
     ...(weights ? { weights } : {}),

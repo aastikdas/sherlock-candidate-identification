@@ -14,7 +14,8 @@ const asyncHandler = require('../../utils/asyncHandler');
 
 const identifyCandidate = asyncHandler(async (req, res) => {
   const { meeting, weights } = req.body || {};
-  const data = await candidateService.identifyCandidate(meeting, weights);
+  const meetingId = req.headers['x-meeting-id'] || req.query.meetingId;
+  const data = await candidateService.identifyCandidate(meeting, weights, meetingId);
   sendSuccess(res, { message: 'Candidate identification completed successfully.', data });
 });
 
@@ -26,7 +27,8 @@ const identifyCandidate = asyncHandler(async (req, res) => {
  */
 const getMergedCandidate = asyncHandler(async (req, res) => {
   const { meeting, weights } = req.body || {};
-  const data = await candidateService.getMergedCandidate(meeting, weights);
+  const meetingId = req.headers['x-meeting-id'] || req.query.meetingId;
+  const data = await candidateService.getMergedCandidate(meeting, weights, meetingId);
   sendSuccess(res, { message: 'Merged candidate analysis completed successfully.', data });
 });
 

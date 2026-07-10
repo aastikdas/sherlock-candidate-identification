@@ -9,7 +9,8 @@ const { sendSuccess } = require('../../utils/apiResponse');
 const asyncHandler = require('../../utils/asyncHandler');
 
 const getMeeting = asyncHandler(async (req, res) => {
-  const data = meetingService.getMeeting();
+  const meetingId = req.headers['x-meeting-id'] || req.query.meetingId;
+  const data = meetingService.getMeeting(meetingId);
   sendSuccess(res, { message: 'Meeting status retrieved successfully.', data });
 });
 
@@ -20,7 +21,8 @@ const startMeeting = asyncHandler(async (req, res) => {
 });
 
 const endMeeting = asyncHandler(async (req, res) => {
-  const data = meetingService.endMeeting();
+  const meetingId = req.body?.meetingId || req.headers['x-meeting-id'] || req.query.meetingId;
+  const data = meetingService.endMeeting(meetingId);
   sendSuccess(res, { message: 'Meeting ended successfully.', data });
 });
 

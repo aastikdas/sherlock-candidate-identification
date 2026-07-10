@@ -14,4 +14,14 @@ const axiosClient = axios.create({
   },
 });
 
+axiosClient.interceptors.request.use((config) => {
+  if (typeof window !== 'undefined') {
+    const meetingId = sessionStorage.getItem('sherlock_meeting_id');
+    if (meetingId) {
+      config.headers['X-Meeting-ID'] = meetingId;
+    }
+  }
+  return config;
+});
+
 export default axiosClient;

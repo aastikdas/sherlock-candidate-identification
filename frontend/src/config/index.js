@@ -4,17 +4,25 @@
  * accessing import.meta.env directly throughout the codebase.
  */
 
+const getSessionMeetingId = () => {
+  if (typeof window === 'undefined') return 'meeting-mock-001';
+  let mId = sessionStorage.getItem('sherlock_meeting_id');
+  if (!mId) {
+    const baseId = import.meta.env.VITE_DEFAULT_MEETING_ID || 'meeting-mock-001';
+    mId = `${baseId}-${Math.random().toString(36).substring(2, 9)}`;
+    sessionStorage.setItem('sherlock_meeting_id', mId);
+  }
+  return mId;
+};
+
 const config = {
   apiBaseUrl: import.meta.env.VITE_API_BASE_URL || '',
   socketUrl: import.meta.env.VITE_SOCKET_URL || '',
   // The mock realtime session (backend `sockets/services/realtimeMock.service.js`)
-  // is keyed by an arbitrary meetingId string and seeds its roster from
-  // the same static mock data `/api/participants` uses, independent of
-  // `backend/src/services/meeting.service.js`'s (currently idle,
-  // nothing ever calls `/api/meeting/start`) lifecycle state. Any
-  // constant string works here; it just has to match on both ends of
-  // the socket room, which is what `useMeetingRoom` joins on mount.
-  defaultMeetingId: import.meta.env.VITE_DEFAULT_MEETING_ID || 'meeting-mock-001',
+  // is keyed by a meetingId string and seeds its roster from static mock data.
+  // Using a unique ID per tab allows different tabs to run independent simulations
+  // without conflicting on Render.
+  defaultMeetingId: getSessionMeetingId(),
 };
 
 export default config;

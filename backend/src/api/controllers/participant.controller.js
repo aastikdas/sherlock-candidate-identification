@@ -10,13 +10,15 @@ const { sendSuccess } = require('../../utils/apiResponse');
 const asyncHandler = require('../../utils/asyncHandler');
 
 const getParticipants = asyncHandler(async (req, res) => {
-  const data = await participantService.getParticipants();
+  const meetingId = req.headers['x-meeting-id'] || req.query.meetingId;
+  const data = await participantService.getParticipants(meetingId);
   sendSuccess(res, { message: 'Participants retrieved successfully.', data });
 });
 
 const getParticipantById = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const data = await participantService.getParticipantById(id);
+  const meetingId = req.headers['x-meeting-id'] || req.query.meetingId;
+  const data = await participantService.getParticipantById(id, meetingId);
   sendSuccess(res, { message: 'Participant retrieved successfully.', data });
 });
 

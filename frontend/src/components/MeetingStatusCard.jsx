@@ -87,15 +87,12 @@ function MeetingStatusCard() {
   const participantsCount = participants.length;
   const camerasEnabledCount = participants.filter((p) => p.webcamStatus === 'on').length;
 
-  const earliestJoinMs = participants.reduce((earliest, p) => {
-    const joined = p.joinTime ? new Date(p.joinTime).getTime() : NaN;
-    if (Number.isNaN(joined)) return earliest;
-    return earliest === null ? joined : Math.min(earliest, joined);
-  }, null);
+  const startedAt = data?.meeting?.startedAt;
+  const startedAtMs = startedAt ? new Date(startedAt).getTime() : null;
 
-  const durationSeconds = earliestJoinMs ? Math.max(0, Math.floor((now - earliestJoinMs) / 1000)) : null;
-  const startedAtLabel = earliestJoinMs
-    ? new Date(earliestJoinMs).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  const durationSeconds = startedAtMs ? Math.max(0, Math.floor((now - startedAtMs) / 1000)) : null;
+  const startedAtLabel = startedAtMs
+    ? new Date(startedAtMs).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     : '—';
 
   const statusLabel = isLive ? 'Live' : 'Reconnecting';

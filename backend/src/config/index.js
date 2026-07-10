@@ -16,11 +16,11 @@ const config = {
   },
 
   cors: {
-    clientUrl: process.env.CLIENT_URL || 'http://localhost:5173',
+    clientUrl: process.env.FRONTEND_URL || process.env.CLIENT_URL || '',
   },
 
   aiService: {
-    baseUrl: process.env.AI_SERVICE_URL || 'http://localhost:8001',
+    baseUrl: process.env.AI_SERVICE_URL || '',
     timeoutMs: parseInt(process.env.AI_SERVICE_TIMEOUT_MS, 10) || 5000,
   },
 

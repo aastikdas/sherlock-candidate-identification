@@ -196,7 +196,59 @@ mode.
 
 ---
 
-## 5. Design Principles
+## 5. Deployment on Render
+
+This project is prepared for deployment on **Render** as three separate services. Follow these instructions to deploy each one.
+
+### 5.1 AI Service (FastAPI)
+Deploy the AI service first so the backend has its URL ready.
+
+1. Create a new **Web Service** on Render.
+2. Connect your Git repository.
+3. Configure the following settings:
+   - **Root Directory**: `ai-service`
+   - **Environment**: `Python`
+   - **Build Command**: `pip install -r requirements.txt`
+   - **Start Command**: `uvicorn main:app --host 0.0.0.0 --port $PORT`
+4. Add the following **Environment Variables**:
+   - `GEMINI_API_KEY`: *(Optional)* Your Gemini API key from Google AI Studio. If unset, it will fall back to deterministic mode.
+   - `GEMINI_MODEL`: `gemini-2.0-flash`
+   - `GEMINI_TIMEOUT_SECONDS`: `20`
+5. Click **Deploy**. Note the generated service URL (e.g. `https://sherlock-ai.onrender.com`).
+
+### 5.2 Backend (Express + Socket.IO)
+Deploy the backend next.
+
+1. Create a new **Web Service** on Render.
+2. Connect your Git repository.
+3. Configure the following settings:
+   - **Root Directory**: `backend`
+   - **Environment**: `Node`
+   - **Build Command**: `npm install`
+   - **Start Command**: `npm start`
+4. Add the following **Environment Variables**:
+   - `NODE_ENV`: `production`
+   - `AI_SERVICE_URL`: The URL of your deployed AI service (from step 5.1).
+   - `FRONTEND_URL`: The URL of your deployed frontend (from step 5.3, e.g. `https://sherlock.onrender.com`).
+5. Click **Deploy**. Note the generated backend URL (e.g. `https://sherlock-backend.onrender.com`).
+
+### 5.3 Frontend (React + Vite)
+Deploy the frontend last.
+
+1. Create a new **Static Site** on Render.
+2. Connect your Git repository.
+3. Configure the following settings:
+   - **Root Directory**: `frontend`
+   - **Build Command**: `npm run build`
+   - **Publish Directory**: `dist`
+4. Add the following **Environment Variables**:
+   - `VITE_API_BASE_URL`: The URL of your deployed backend (from step 5.2).
+   - `VITE_SOCKET_URL`: The URL of your deployed backend (from step 5.2).
+5. Click **Deploy**.
+
+---
+
+## 6. Design Principles
 
 - **Modular by layer**: `api/routes` (HTTP), `services` (business logic),
   `middleware` (cross-cutting concerns), `utils` (helpers), `sockets`
@@ -211,7 +263,7 @@ mode.
 
 ---
 
-## 6. Realtime Foundation (Socket.IO)
+## 7. Realtime Foundation (Socket.IO)
 
 The frontend now auto-connects to the backend's Socket.IO server as soon
 as the app loads, and auto-reconnects if the connection drops:
@@ -235,7 +287,7 @@ as event handlers on top of this connectivity foundation — see
 
 ---
 
-## 7. Assumptions
+## 8. Assumptions
 
 This prototype targets the Sherlock Internship Challenge brief. Where
 the brief left implementation details open, the following assumptions
@@ -279,7 +331,7 @@ were made:
   is treated as an enhancement on top of the rule-based engine, not a
   hard dependency.
 
-## 8. Roadmap / Next Milestone
+## 9. Roadmap / Next Milestone
 
 - [x] Define application-specific Socket.IO events (participant
       activity + a normalized timeline feed) on top of the connectivity

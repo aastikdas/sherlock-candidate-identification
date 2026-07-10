@@ -2,6 +2,7 @@ const logger = require('../../utils/logger');
 const config = require('../../config');
 const participantService = require('../../services/participant.service');
 const candidateService = require('../../services/candidate.service');
+const meetingService = require('../../services/meeting.service');
 const { PARTICIPANT_ACTIVITY_EVENTS, TIMELINE_EVENTS } = require('../events');
 const { mapToTimelineEntry } = require('./timelineMapper');
 const {
@@ -23,7 +24,7 @@ function createInitialState(meetingId) {
     webcamStatuses: new Map(),
     telemetry: {
       meetingId: meetingId,
-      scheduledStartTime: new Date(Date.now() - 600).toISOString(),
+      scheduledStartTime: new Date(Date.now() - 60000).toISOString(),
       meetingStartTime: new Date().toISOString(),
       meetingDurationSeconds: 0,
       participants: []
@@ -229,13 +230,30 @@ async function startMockActivity(io, meetingId) {
   }
 
   const state = createInitialState(meetingId);
+  try {
+    if (meetingService.getMeeting().status === meetingService.STATUS.IN_PROGRESS) {
+      meetingService.endMeeting();
+    }
+  } catch (e) {
+    // ignore
+  }
+  try {
+    meetingService.startMeeting({
+      meetingId,
+      candidateName: 'Jane Doe',
+      participants: participants || [],
+    });
+  } catch (e) {
+    logger.error(SCOPE, 'Failed to start meeting in meetingService', { message: e.message });
+  }
+
   const timers = [];
   const joinTimerRef = { current: null };
 
-  const DEMO_JOIN_INTERVAL_MS = 15000;
-  const DEMO_SPEAKING_INTERVAL_MS = 20000;
-  const DEMO_CAMERA_INTERVAL_MS = 25000;
-  const DEMO_LEAVE_INTERVAL_MS = 60000;
+  const DEMO_JOIN_INTERVAL_MS = 5000;
+  const DEMO_SPEAKING_INTERVAL_MS = 7000;
+  const DEMO_CAMERA_INTERVAL_MS = 10000;
+  const DEMO_LEAVE_INTERVAL_MS = 15000;
 
   runTick({
     io,
@@ -356,6 +374,15 @@ function stopMockActivity(meetingId) {
         clearInterval(timerRef.current);
       }
     });
+  }
+
+  try {
+    const meetingState = meetingService.getMeeting();
+    if (meetingState.status === meetingService.STATUS.IN_PROGRESS && meetingState.meetingId === meetingId) {
+      meetingService.endMeeting();
+    }
+  } catch (e) {
+    // ignore
   }
 
   sessions.delete(meetingId);

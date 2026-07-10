@@ -5,8 +5,8 @@
  */
 
 const config = {
-  apiBaseUrl: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000',
-  socketUrl: import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000',
+  apiBaseUrl: import.meta.env.VITE_API_BASE_URL || '',
+  socketUrl: import.meta.env.VITE_SOCKET_URL || '',
   // The mock realtime session (backend `sockets/services/realtimeMock.service.js`)
   // is keyed by an arbitrary meetingId string and seeds its roster from
   // the same static mock data `/api/participants` uses, independent of
